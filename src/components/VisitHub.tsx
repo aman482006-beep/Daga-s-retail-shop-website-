@@ -1,24 +1,31 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 const REVIEW_URL =
   "https://search.google.com/local/writereview?placeid=ChIJ47LHNQgWrjsRV0ikmlBQlEY";
 const WHATSAPP_URL = "https://wa.me/919886231691";
 const MAPS_URL =
   "https://www.google.com/maps/place/?q=place_id:ChIJ47LHNQgWrjsRV0ikmlBQlEY";
+const CATALOGUE_URL =
+  "https://aman482006-beep.github.io/Daga-s-retail-shop-website-/shop/";
+
+const ratingLabels = ["", "Poor", "Fair", "Good", "Very good", "Excellent"];
 
 export default function VisitHub() {
+  // Everyone starts in light mode. Only a choice made in this v2 popup is remembered.
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [rating, setRating] = useState(0);
   const [dialogOpen, setDialogOpen] = useState(true);
+  const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
     try {
-      const saved = window.localStorage.getItem("dagas-visit-hub-theme-v2");
-      if (saved === "dark") setTheme("dark");
+      if (window.localStorage.getItem("dagas-visit-hub-theme-v2") === "dark") {
+        setTheme("dark");
+      }
     } catch {
-      // Keep the required light default when storage is unavailable.
+      // Light remains the default if storage is unavailable.
     }
   }, []);
 
@@ -27,21 +34,24 @@ export default function VisitHub() {
     try {
       window.localStorage.setItem("dagas-visit-hub-theme-v2", theme);
     } catch {
-      // Theme remains available for this visit.
+      // Theme still works for the current visit.
     }
   }, [theme]);
 
   useEffect(() => {
-    if (!dialogOpen) return;
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setDialogOpen(false);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    const dialog = dialogRef.current;
+    if (!dialog) return;
+    if (dialogOpen && !dialog.open) dialog.showModal();
+    if (!dialogOpen && dialog.open) dialog.close();
   }, [dialogOpen]);
+
+  function toggleTheme() {
+    setTheme((currentTheme) => (currentTheme === "light" ? "dark" : "light"));
+  }
 
   function continueToGoogle() {
     if (!rating) return;
+    // Open only after the visitor taps the button. Mobile browsers may use a new tab.
     const popup = window.open(
       REVIEW_URL,
       "dagasGoogleReview",
@@ -66,8 +76,8 @@ export default function VisitHub() {
         }
         body:has(.review-page) {
           display: block !important;
-          padding: 0 !important;
           min-height: 100vh;
+          padding: 0 !important;
           background: #f8fafd;
         }
         body:has(.review-page) > main {
@@ -108,20 +118,19 @@ export default function VisitHub() {
         .review-brand { font:500 16px 'Google Sans',Roboto,Arial,sans-serif; letter-spacing:-.2px; }
         .review-brand small { display:block; margin-top:3px; color:var(--subtle); font:400 12px Roboto,Arial,sans-serif; }
         .theme-toggle { border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:9px 14px; font:500 13px Roboto,Arial,sans-serif; cursor:pointer; }
-        .review-backdrop { position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center; padding:18px; background:rgba(32,33,36,.42); }
-        .review-dialog { width:min(100%, 520px); max-height:calc(100vh - 36px); overflow:auto; border:0; border-radius:28px; padding:0; margin:auto; background:var(--surface); color:var(--ink); box-shadow:0 12px 40px rgba(60,64,67,.28); }
+        .review-dialog { width:min(520px, calc(100% - 36px)); max-height:calc(100vh - 36px); overflow:auto; border:0; border-radius:28px; padding:0; margin:auto; background:var(--surface); color:var(--ink); box-shadow:0 12px 40px rgba(60,64,67,.28); }
         .review-dialog::backdrop { background:rgba(32,33,36,.42); }
         .dialog-inner { padding:28px 30px 24px; }
         .dialog-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:25px; }
         .google-word { font:500 18px 'Google Sans',Roboto,Arial,sans-serif; letter-spacing:-.7px; }
         .google-word .g1{color:#4285f4}.google-word .g2{color:#ea4335}.google-word .g3{color:#fbbc05}.google-word .g4{color:#4285f4}.google-word .g5{color:#34a853}.google-word .g6{color:#ea4335}
+        .dialog-controls { display:flex; align-items:center; gap:4px; }
+        .dialog-controls .theme-toggle { padding:8px 12px; }
         .close-dialog { display:grid; place-items:center; width:38px; height:38px; border:0; border-radius:50%; background:transparent; color:var(--subtle); font-size:24px; cursor:pointer; }
         .close-dialog:hover { background:var(--blue-soft); }
         .dialog-title { margin:0 0 7px; font:500 23px/1.25 'Google Sans',Roboto,Arial,sans-serif; letter-spacing:-.4px; }
         .dialog-copy { margin:0; color:var(--subtle); font:400 14px/1.5 Roboto,Arial,sans-serif; }
-        .business-row { display:flex; align-items:center; gap:13px; margin:25px 0 26px; }
-        .business-mark { display:grid; place-items:center; flex:0 0 46px; width:46px; height:46px; border-radius:50%; background:#f1f3f4; color:#5f6368; font:600 18px 'Google Sans',sans-serif; }
-        .theme-dark .business-mark { background:#3c4043; color:#e8eaed; }
+        .business-row { margin:25px 0 26px; }
         .business-name { font:500 16px 'Google Sans',Roboto,Arial,sans-serif; }
         .business-location { margin-top:3px; color:var(--subtle); font:400 13px Roboto,Arial,sans-serif; }
         .rate-label { margin:0 0 13px; font:500 14px Roboto,Arial,sans-serif; }
@@ -145,6 +154,7 @@ export default function VisitHub() {
         .small-links { display:flex; flex-wrap:wrap; justify-content:center; gap:20px; margin-top:28px; }
         .small-links a { color:var(--blue); font:500 13px Roboto,Arial,sans-serif; text-decoration:none; }
         .small-links a:hover { text-decoration:underline; }
+        .review-page :focus-visible { outline:2px solid var(--blue); outline-offset:3px; }
         @media(max-width:420px) {
           .review-top { margin-bottom:26px; }
           .dialog-inner { padding:24px 20px 20px; }
@@ -167,7 +177,7 @@ export default function VisitHub() {
           <button
             type="button"
             className="theme-toggle"
-            onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+            onClick={toggleTheme}
             aria-label="Switch colour theme"
           >
             {theme === "light" ? "Dark theme" : "Light theme"}
@@ -184,73 +194,69 @@ export default function VisitHub() {
             <div className="small-links">
               <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">WhatsApp</a>
               <a href={MAPS_URL} target="_blank" rel="noopener noreferrer">Directions</a>
-              <a href="https://aman482006-beep.github.io/Daga-s-retail-shop-website-/shop/">Catalogue</a>
+              <a href={CATALOGUE_URL}>Catalogue</a>
             </div>
           </section>
         )}
       </div>
 
-      {dialogOpen && (
-        <div className="review-backdrop" role="presentation" onMouseDown={(event) => {
-          if (event.target === event.currentTarget) setDialogOpen(false);
-        }}>
-          <section
-            className="review-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="review-title"
-            aria-describedby="review-description"
-          >
-            <div className="dialog-inner">
-              <div className="dialog-head">
-                <div className="google-word" aria-label="Google">
-                  <span className="g1">G</span><span className="g2">o</span><span className="g3">o</span><span className="g4">g</span><span className="g5">l</span><span className="g6">e</span>
-                </div>
-                <button type="button" className="close-dialog" onClick={() => setDialogOpen(false)} aria-label="Close review popup">×</button>
-              </div>
-
-              <h1 className="dialog-title" id="review-title">Review DAGAS SHOP</h1>
-              <p className="dialog-copy" id="review-description">How was your experience with this business?</p>
-
-              <div className="business-row">
-                <div className="business-mark" aria-hidden="true">D</div>
-                <div>
-                  <div className="business-name">DAGAS SHOP</div>
-                  <div className="business-location">Sultanpete, Bengaluru</div>
-                </div>
-              </div>
-
-              <p className="rate-label">Rate your experience</p>
-              <div className="rating-stars" role="group" aria-label="Choose a star rating">
-                {[1, 2, 3, 4, 5].map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    className={rating >= value ? "selected" : ""}
-                    aria-label={value + " out of 5 stars"}
-                    aria-pressed={rating === value}
-                    onClick={() => setRating(value)}
-                  >
-                    ★
-                  </button>
-                ))}
-              </div>
-              <p className="rating-feedback" aria-live="polite">
-                {rating === 0 ? "Select a star to continue" : ["", "Poor", "Fair", "Good", "Very good", "Excellent"][rating]}
-              </p>
-
-              <p className="dialog-note">
-                You’ll finish sharing your rating on Google. Please leave an honest review based on your own experience.
-              </p>
-
-              <div className="dialog-actions">
-                <button type="button" className="btn-text" onClick={() => setDialogOpen(false)}>Not now</button>
-                <button type="button" className="btn-primary" disabled={rating === 0} onClick={continueToGoogle}>Continue to Google</button>
-              </div>
+      <dialog
+        ref={dialogRef}
+        className="review-dialog"
+        aria-labelledby="review-title"
+        aria-describedby="review-description"
+        onClose={() => setDialogOpen(false)}
+      >
+        <div className="dialog-inner">
+          <div className="dialog-head">
+            <div className="google-word" aria-label="Google">
+              <span className="g1">G</span><span className="g2">o</span><span className="g3">o</span><span className="g4">g</span><span className="g5">l</span><span className="g6">e</span>
             </div>
-          </section>
+            <div className="dialog-controls">
+              <button type="button" className="theme-toggle" onClick={toggleTheme} aria-label="Switch colour theme">
+                {theme === "light" ? "Dark theme" : "Light theme"}
+              </button>
+              <button type="button" className="close-dialog" onClick={() => setDialogOpen(false)} aria-label="Close review popup">×</button>
+            </div>
+          </div>
+
+          <h1 className="dialog-title" id="review-title">Review DAGAS SHOP</h1>
+          <p className="dialog-copy" id="review-description">How was your experience with this business?</p>
+
+          <div className="business-row">
+            <div className="business-name">DAGAS SHOP</div>
+            <div className="business-location">Sultanpete, Bengaluru</div>
+          </div>
+
+          <p className="rate-label">Rate your experience</p>
+          <div className="rating-stars" role="group" aria-label="Choose a star rating">
+            {[1, 2, 3, 4, 5].map((value) => (
+              <button
+                key={value}
+                type="button"
+                className={rating >= value ? "selected" : ""}
+                aria-label={value + " out of 5 stars"}
+                aria-pressed={rating === value}
+                onClick={() => setRating(value)}
+              >
+                ★
+              </button>
+            ))}
+          </div>
+          <p className="rating-feedback" aria-live="polite">
+            {rating === 0 ? "Select a star to continue" : ratingLabels[rating]}
+          </p>
+
+          <p className="dialog-note">
+            You’ll finish sharing your rating on Google. Please leave an honest review based on your own experience.
+          </p>
+
+          <div className="dialog-actions">
+            <button type="button" className="btn-text" onClick={() => setDialogOpen(false)}>Not now</button>
+            <button type="button" className="btn-primary" disabled={rating === 0} onClick={continueToGoogle}>Continue to Google</button>
+          </div>
         </div>
-      )}
+      </dialog>
     </div>
   );
 }
