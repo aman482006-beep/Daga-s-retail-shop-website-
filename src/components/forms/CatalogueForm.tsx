@@ -20,34 +20,37 @@ export function CatalogueForm() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("loading");
     setErrorMsg("");
 
-    try {
-      const res = await fetch("/api/enquiry", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "catalogue_request",
-          ...formData,
-        }),
-      });
+    // GitHub Pages is static hosting, so hand the enquiry to WhatsApp instead of a server API.
+    const message = [
+      "Hi DAGAS SHOP, I'd like to request your latest wholesale kidswear catalogue.",
+      `Name: ${formData.name}`,
+      `Business / Store: ${formData.businessName}`,
+      `City: ${formData.city}`,
+      `Country: ${formData.country}`,
+      `WhatsApp: ${formData.whatsapp}`,
+      `Email: ${formData.email}`,
+      `Business Type: ${formData.businessType}`,
+      `Products Interested In: ${formData.productsInterestedIn}`,
+      `Approximate Quantity: ${formData.approxQuantity}`,
+    ].join("\n");
 
-      if (!res.ok) throw new Error("Could not submit request. Please try again.");
+    window.open(
+      `https://wa.me/919886231691?text=${encodeURIComponent(message)}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
 
-      setStatus("success");
-      trackConversion("catalogue_request_submit", {
-        category: "Catalogue",
-        business_type: formData.businessType,
-        source_page: "/request-catalogue",
-      });
-    } catch (err: unknown) {
-      setStatus("error");
-      const message = err instanceof Error ? err.message : "Something went wrong. Please connect with us directly on WhatsApp.";
-      setErrorMsg(message);
-    }
+    setStatus("success");
+    trackConversion("catalogue_request_submit", {
+      category: "Catalogue",
+      business_type: formData.businessType,
+      source_page: "/request-catalogue",
+    });
   };
 
   if (status === "success") {
@@ -58,7 +61,7 @@ export function CatalogueForm() {
         </div>
         <h3 className="text-xl font-bold text-gray-900">Catalogue Request Confirmed</h3>
         <p className="text-sm text-gray-600 max-w-md mx-auto">
-          Thank you, <strong>{formData.name}</strong>. Our Bangalore team will send the latest PDF catalogue and line sheets to your WhatsApp (<strong>{formData.whatsapp}</strong>) and email shortly.
+          Thank you, <strong>{formData.name}</strong>. Your WhatsApp chat is ready with the request prefilled. Press Send in WhatsApp to share it with our team.
         </p>
         <button
           onClick={() => setStatus("idle")}
