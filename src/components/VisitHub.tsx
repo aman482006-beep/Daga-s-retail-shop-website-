@@ -148,7 +148,7 @@ export default function VisitHub() {
             ))}
           </div>
           <p className="rating-feedback" aria-live="polite">{rating===0?"Select a star to continue":RATING_LABELS[rating]}</p>
-          <p className="dialog-note">You’ll finish sharing your rating on Google. Please leave an honest review based on your own experience.</p>
+          <p className="dialog-note">Google will open the review page. Choose your rating there too, then share an honest review based on your own experience.</p>
           <div className="dialog-actions">
             <button type="button" className="btn-text" onClick={() => setDialogOpen(false)}>Not now</button>
             <button type="button" className="btn-primary" disabled={rating===0} onClick={continueToGoogle}>Continue to Google</button>
