@@ -1,0 +1,39 @@
+name: Build and publish DAGAS storefront
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: dagas-static-publish
+  cancel-in-progress: false
+jobs:
+  build-and-publish:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - name: Build static site for this repository URL
+        env:
+          GITHUB_PAGES: 'true'
+          NEXT_PUBLIC_BASE_PATH: '/Daga-s-retail-shop-website-'
+        run: npm run build
+      - name: Publish generated site to the Pages branch root
+        run: |
+          test -f out/index.html
+          cp -a out/. .
+          touch .nojekyll
+          rm -rf out
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Publish DAGAS storefront"
+            git push origin "HEAD:${GITHUB_REF_NAME}"
+          fi
