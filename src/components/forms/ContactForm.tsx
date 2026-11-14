@@ -17,33 +17,33 @@ export function ContactForm() {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setStatus("loading");
     setErrorMsg("");
 
-    try {
-      const res = await fetch("/api/enquiry", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "contact_enquiry",
-          ...formData,
-        }),
-      });
+    // GitHub Pages is static hosting, so hand the enquiry to WhatsApp instead of a server API.
+    const message = [
+      "Hi DAGAS SHOP, I'd like to discuss a wholesale kidswear requirement.",
+      `Name: ${formData.name}`,
+      `Business / Store: ${formData.businessName}`,
+      `Phone / WhatsApp: ${formData.phone}`,
+      `Email: ${formData.email || "Not provided"}`,
+      `City: ${formData.city}`,
+      `Requirement: ${formData.requirement}`,
+    ].join("\n");
 
-      if (!res.ok) throw new Error("Could not submit. Please try again.");
+    window.open(
+      `https://wa.me/919886231691?text=${encodeURIComponent(message)}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
 
-      setStatus("success");
-      trackConversion("contact_form_submit", {
-        category: "Contact",
-        label: formData.businessName,
-      });
-    } catch (err: unknown) {
-      setStatus("error");
-      const message = err instanceof Error ? err.message : "Something went wrong. Please connect with us directly on WhatsApp.";
-      setErrorMsg(message);
-    }
+    setStatus("success");
+    trackConversion("contact_form_submit", {
+      category: "Contact",
+      label: formData.businessName,
+    });
   };
 
   if (status === "success") {
@@ -54,7 +54,7 @@ export function ContactForm() {
         </div>
         <h3 className="text-xl font-bold text-gray-900">Requirement Received</h3>
         <p className="text-sm text-gray-600 max-w-md mx-auto">
-          Thank you, <strong>{formData.name}</strong>. Our Sultanpete showroom desk will respond to your requirement via WhatsApp or email promptly.
+          Thank you, <strong>{formData.name}</strong>. Your WhatsApp chat is ready with your requirement prefilled. Press Send in WhatsApp to share it with our showroom team.
         </p>
         <button
           onClick={() => setStatus("idle")}
