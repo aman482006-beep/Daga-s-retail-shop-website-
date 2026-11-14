@@ -2,11 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "@/styles/globals.css";
 import { COMPANY } from "@/data/company";
-import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
-import { MobileStickyBar } from "@/components/layout/MobileStickyBar";
-import { WhatsAppButton } from "@/components/ui/WhatsAppButton";
+import { AppFrame } from "@/components/layout/AppFrame";
 import { OrganizationJsonLd, WebsiteJsonLd } from "@/components/seo/JsonLd";
 
 const inter = Inter({
@@ -83,9 +79,7 @@ export const metadata: Metadata = {
       { url: "/favicon.png", sizes: "64x64", type: "image/png" },
       { url: "/favicon.ico" },
     ],
-    apple: [
-      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
-    ],
+    apple: [{ url: "/icon-192.png", sizes: "192x192", type: "image/png" }],
   },
   robots: {
     index: true,
@@ -112,12 +106,7 @@ export default function RootLayout({
         <WebsiteJsonLd />
       </head>
       <body className="min-h-screen flex flex-col font-sans bg-white text-gray-900">
-        <AnnouncementBar />
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
-        <MobileStickyBar />
-        <WhatsAppButton variant="floating" sourceContext="global_floating_button" />
+        <AppFrame>{children}</AppFrame>
       </body>
     </html>
   );
