@@ -15,20 +15,7 @@ export default function VisitHub() {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
-    try {
-      if (window.localStorage.getItem("dagas-visit-hub-theme-v2") === "dark") setTheme("dark");
-    } catch {
-      // Light mode is the default if storage is unavailable.
-    }
-  }, []);
-
-  useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
-    try {
-      window.localStorage.setItem("dagas-visit-hub-theme-v2", theme);
-    } catch {
-      // The theme still works for the current visit.
-    }
   }, [theme]);
 
   useEffect(() => {
