@@ -1,86 +1,123 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 
-const REVIEW_URL =
-  "https://search.google.com/local/writereview?placeid=ChIJ47LHNQgWrjsRV0ikmlBQlEY";
-const WHATSAPP_URL = "https://wa.me/919886231691";
-const MAPS_URL =
-  "https://www.google.com/maps/place/?q=place_id:ChIJ47LHNQgWrjsRV0ikmlBQlEY";
-const CATALOGUE_URL =
-  "https://aman482006-beep.github.io/Daga-s-retail-shop-website-/shop/";
+const SHOP = {
+  name: "DAGAS SHOP",
+  location: "Sultanpete, Bengaluru",
+  reviewUrl: "https://search.google.com/local/writereview?placeid=ChIJ47LHNQgWrjsRV0ikmlBQlEY",
+  whatsapp: "919886231691",
+  phone: "+919886231691",
+  catalogueUrl: "https://aman482006-beep.github.io/Daga-s-retail-shop-website-/shop/",
+  address: "Shop No. 301, 3rd Floor, Mohana Square, #132/1, Sultanpet Main Road, Bengaluru, Karnataka 560053, India",
+  hours: "Monday – Saturday, 11:00 AM – 8:30 PM IST · Sunday closed / by appointment",
+  mapsUrl: "https://www.google.com/maps/place/?q=place_id:ChIJ47LHNQgWrjsRV0ikmlBQlEY",
+  perks: [
+    "Wholesale kidswear for retailers and boutiques",
+    "Flexible quantities with no fixed MOQ",
+    "New arrivals, ready stock and bulk-order support",
+  ],
+};
 
-const ratingLabels = ["", "Poor", "Fair", "Good", "Very good", "Excellent"];
+const tabs = [
+  { id: "rate", label: "Rate" },
+  { id: "ask", label: "Ask" },
+  { id: "off", label: "Offers" },
+  { id: "vis", label: "Visit" },
+];
+
+function whatsappLink(message: string) {
+  return "https://wa.me/" + SHOP.whatsapp + "?text=" + encodeURIComponent(message);
+}
 
 export default function VisitHub() {
-  // Everyone starts in light mode. Only a choice made in this v2 popup is remembered.
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [activeTab, setActiveTab] = useState("rate");
+  const [reviewOpen, setReviewOpen] = useState(true);
   const [rating, setRating] = useState(0);
-  const [dialogOpen, setDialogOpen] = useState(true);
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const [feedback, setFeedback] = useState("");
+  const [feedbackName, setFeedbackName] = useState("");
+  const [need, setNeed] = useState("Product availability");
+  const [details, setDetails] = useState("");
+  const [visitorName, setVisitorName] = useState("");
+  const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
+    // New visitors always see the light design. Dark mode is only used after an explicit choice.
     try {
-      if (window.localStorage.getItem("dagas-visit-hub-theme-v2") === "dark") {
+      const saved = window.localStorage.getItem("dagas-visit-hub-theme");
+      if (saved === "dark") {
         setTheme("dark");
       }
     } catch {
-      // Light remains the default if storage is unavailable.
+      // Keep the default light theme if storage is unavailable.
     }
   }, []);
 
   useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    try {
-      window.localStorage.setItem("dagas-visit-hub-theme-v2", theme);
-    } catch {
-      // Theme still works for the current visit.
-    }
-  }, [theme]);
-
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (dialogOpen && !dialog.open) dialog.showModal();
-    if (!dialogOpen && dialog.open) dialog.close();
-  }, [dialogOpen]);
+    if (!reviewOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setReviewOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [reviewOpen]);
 
   function toggleTheme() {
-    setTheme((currentTheme) => (currentTheme === "light" ? "dark" : "light"));
-  }
-
-  function continueToGoogle() {
-    if (!rating) return;
-    // Open only after the visitor taps the button. Mobile browsers may use a new tab.
-    const popup = window.open(
-      REVIEW_URL,
-      "dagasGoogleReview",
-      "popup=yes,width=560,height=760,resizable=yes,scrollbars=yes"
-    );
-    if (popup) {
-      popup.opener = null;
-    } else {
-      window.open(REVIEW_URL, "_blank", "noopener,noreferrer");
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    try {
+      window.localStorage.setItem("dagas-visit-hub-theme", nextTheme);
+    } catch {
+      // Theme remains changed for this visit even if storage is unavailable.
     }
   }
 
+  function chooseRating(value: number) {
+    setRating(value);
+    if (value >= 4) {
+      // This click is a direct user gesture, so the real Google review page can open in a new tab.
+      window.open(SHOP.reviewUrl, "_blank", "noopener,noreferrer");
+    }
+  }
+
+  function sendFeedback() {
+    const message = [
+      "DAGAS SHOP visit feedback",
+      "Rating: " + rating + " stars",
+      "Feedback: " + (feedback.trim() || "Not provided"),
+      "Name / phone: " + (feedbackName.trim() || "Not provided"),
+    ].join("\n");
+    window.open(whatsappLink(message), "_blank", "noopener,noreferrer");
+  }
+
+  function sendQuestion() {
+    const message = [
+      "Hi DAGAS SHOP, I have a showroom enquiry.",
+      "Requirement: " + need,
+      "Details: " + (details.trim() || "Please contact me with more information."),
+      "Name: " + (visitorName.trim() || "Not provided"),
+    ].join("\n");
+    window.open(whatsappLink(message), "_blank", "noopener,noreferrer");
+  }
+
+  const offersMessage =
+    "Hi DAGAS SHOP, I visited your showroom and would like to receive updates about new arrivals and offers on WhatsApp. Please share the details.";
+
   return (
-    <div className={"review-page theme-" + theme}>
+    <div className="vh-root" data-theme={theme}>
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap');
-        html, body {
-          margin: 0;
-          min-height: 100%;
-          background: #f8fafd;
-          font-family: Roboto, Arial, sans-serif;
-        }
-        body:has(.review-page) {
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;600;700&display=swap');
+        body:has(.vh-root) {
           display: block !important;
           min-height: 100vh;
+          margin: 0;
           padding: 0 !important;
-          background: #f8fafd;
+          overflow-x: hidden;
+          background: var(--vh-bg);
+          color: var(--vh-ink);
+          font-family: Roboto, Arial, sans-serif;
         }
-        body:has(.review-page) > main {
+        body:has(.vh-root) > main {
           display: block;
           width: 100%;
           min-height: 100vh;
@@ -88,175 +125,190 @@ export default function VisitHub() {
           padding: 0;
           flex: none;
         }
-        .review-page {
-          --page: #f8fafd;
-          --surface: #fff;
-          --ink: #202124;
-          --subtle: #5f6368;
-          --line: #dadce0;
-          --blue: #1a73e8;
-          --blue-soft: #e8f0fe;
+        .vh-root {
+          --vh-bg: #f8f9fa;
+          --vh-surf: #fff;
+          --vh-ink: #202124;
+          --vh-mute: #5f6368;
+          --vh-line: #dadce0;
+          --vh-blue: #1a73e8;
+          --vh-blue-soft: #e8f0fe;
+          --vh-star: #fbbc04;
           min-height: 100vh;
           min-height: 100svh;
-          padding: max(20px, env(safe-area-inset-top)) 18px max(24px, env(safe-area-inset-bottom));
-          background: var(--page);
-          color: var(--ink);
-          font-family: Roboto, Arial, sans-serif;
+          padding: max(18px, env(safe-area-inset-top, 0px)) 16px calc(104px + env(safe-area-inset-bottom, 0px));
+          background: var(--vh-bg);
+          color: var(--vh-ink);
+          color-scheme: light;
+          font: 400 16px/1.5 Roboto, Arial, sans-serif;
           transition: background .2s, color .2s;
         }
-        .review-page.theme-dark {
-          --page: #202124;
-          --surface: #292a2d;
-          --ink: #e8eaed;
-          --subtle: #bdc1c6;
-          --line: #5f6368;
-          --blue: #8ab4f8;
-          --blue-soft: #303f57;
+        .vh-root[data-theme="dark"] {
+          --vh-bg: #17191c;
+          --vh-surf: #22252a;
+          --vh-ink: #e8eaed;
+          --vh-mute: #bdc1c6;
+          --vh-line: #3c4043;
+          --vh-blue: #8ab4f8;
+          --vh-blue-soft: #26364d;
+          --vh-star: #fdd663;
+          color-scheme: dark;
         }
-        .review-shell { max-width: 620px; margin: 0 auto; }
-        .review-top { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:44px; }
-        .review-brand { font:500 16px 'Google Sans',Roboto,Arial,sans-serif; letter-spacing:-.2px; }
-        .review-brand small { display:block; margin-top:3px; color:var(--subtle); font:400 12px Roboto,Arial,sans-serif; }
-        .theme-toggle { border:1px solid var(--line); background:var(--surface); color:var(--ink); border-radius:999px; padding:9px 14px; font:500 13px Roboto,Arial,sans-serif; cursor:pointer; }
-        .review-dialog { width:min(520px, calc(100% - 36px)); max-height:calc(100vh - 36px); overflow:auto; border:0; border-radius:28px; padding:0; margin:auto; background:var(--surface); color:var(--ink); box-shadow:0 12px 40px rgba(60,64,67,.28); }
-        .review-dialog::backdrop { background:rgba(32,33,36,.42); }
-        .dialog-inner { padding:28px 30px 24px; }
-        .dialog-head { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:25px; }
-        .google-word { font:500 18px 'Google Sans',Roboto,Arial,sans-serif; letter-spacing:-.7px; }
-        .google-word .g1{color:#4285f4}.google-word .g2{color:#ea4335}.google-word .g3{color:#fbbc05}.google-word .g4{color:#4285f4}.google-word .g5{color:#34a853}.google-word .g6{color:#ea4335}
-        .dialog-controls { display:flex; align-items:center; gap:4px; }
-        .dialog-controls .theme-toggle { padding:8px 12px; }
-        .close-dialog { display:grid; place-items:center; width:38px; height:38px; border:0; border-radius:50%; background:transparent; color:var(--subtle); font-size:24px; cursor:pointer; }
-        .close-dialog:hover { background:var(--blue-soft); }
-        .dialog-title { margin:0 0 7px; font:500 23px/1.25 'Google Sans',Roboto,Arial,sans-serif; letter-spacing:-.4px; }
-        .dialog-copy { margin:0; color:var(--subtle); font:400 14px/1.5 Roboto,Arial,sans-serif; }
-        .business-row { margin:25px 0 26px; }
-        .business-name { font:500 16px 'Google Sans',Roboto,Arial,sans-serif; }
-        .business-location { margin-top:3px; color:var(--subtle); font:400 13px Roboto,Arial,sans-serif; }
-        .rate-label { margin:0 0 13px; font:500 14px Roboto,Arial,sans-serif; }
-        .rating-stars { display:flex; align-items:center; gap:9px; margin:0 0 8px; }
-        .rating-stars button { display:grid; place-items:center; width:54px; height:54px; padding:0; border:1px solid var(--line); border-radius:50%; background:var(--surface); color:#bdc1c6; font-size:29px; line-height:1; cursor:pointer; transition:background .15s,border-color .15s,color .15s,transform .15s; }
-        .rating-stars button:hover { border-color:var(--blue); transform:translateY(-1px); }
-        .rating-stars button.selected { color:#fbbc04; border-color:#fbbc04; background:#fff8e1; }
-        .theme-dark .rating-stars button.selected { background:#51411f; }
-        .rating-feedback { min-height:20px; margin:6px 0 0; color:var(--subtle); font:400 13px Roboto,Arial,sans-serif; }
-        .dialog-note { margin:21px 0 0; padding-top:18px; border-top:1px solid var(--line); color:var(--subtle); font:400 12px/1.5 Roboto,Arial,sans-serif; }
-        .dialog-actions { display:flex; justify-content:flex-end; align-items:center; gap:10px; margin-top:23px; }
-        .dialog-actions button { min-height:40px; border-radius:999px; padding:0 18px; font:500 14px Roboto,Arial,sans-serif; cursor:pointer; }
-        .btn-text { border:0; background:transparent; color:var(--blue); }
-        .btn-primary { border:0; background:var(--blue); color:white; }
-        .btn-primary:disabled { background:#e8eaed; color:#9aa0a6; cursor:not-allowed; }
-        .theme-dark .btn-primary:disabled { background:#3c4043; color:#80868b; }
-        .closed-state { max-width:520px; margin:0 auto; padding:42px 26px; border:1px solid var(--line); border-radius:24px; background:var(--surface); text-align:center; }
-        .closed-state h1 { margin:0 0 9px; font:500 24px 'Google Sans',Roboto,Arial,sans-serif; }
-        .closed-state p { margin:0 auto; max-width:360px; color:var(--subtle); font:400 14px/1.6 Roboto,Arial,sans-serif; }
-        .reopen { margin-top:23px; border:0; border-radius:999px; padding:12px 20px; background:var(--blue); color:white; font:500 14px Roboto,Arial,sans-serif; cursor:pointer; }
-        .small-links { display:flex; flex-wrap:wrap; justify-content:center; gap:20px; margin-top:28px; }
-        .small-links a { color:var(--blue); font:500 13px Roboto,Arial,sans-serif; text-decoration:none; }
-        .small-links a:hover { text-decoration:underline; }
-        .review-page :focus-visible { outline:2px solid var(--blue); outline-offset:3px; }
-        @media(max-width:420px) {
-          .review-top { margin-bottom:26px; }
-          .dialog-inner { padding:24px 20px 20px; }
-          .rating-stars { gap:6px; justify-content:space-between; }
-          .rating-stars button { width:48px; height:48px; font-size:27px; }
-          .dialog-title { font-size:21px; }
-          .review-dialog { border-radius:24px; }
-        }
-        @media(prefers-reduced-motion:reduce) {
-          .review-page, .rating-stars button { transition:none; }
-        }
+        .vh-root *,.vh-root *::before,.vh-root *::after { box-sizing: border-box; }
+        .vh-wrap { max-width: 520px; margin: 0 auto; }
+        .vh-top { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:24px; }
+        .vh-brand { font-size:17px; font-weight:700; letter-spacing:.01em; }
+        .vh-tag { color:var(--vh-mute); font-size:13px; margin-top:2px; }
+        .vh-theme { width:40px; height:40px; border:1px solid var(--vh-line); border-radius:50%; background:var(--vh-surf); color:var(--vh-ink); font-size:18px; cursor:pointer; }
+        .vh-title { margin:0 0 8px; font-size:24px; line-height:1.25; font-weight:600; letter-spacing:-.3px; }
+        .vh-copy { margin:0 0 16px; color:var(--vh-mute); font-size:14px; line-height:1.55; }
+        .vh-card { padding:24px 20px; border:1px solid var(--vh-line); border-radius:18px; background:var(--vh-surf); box-shadow:0 1px 2px rgba(60,64,67,.10); }
+        .vh-card + .vh-card { margin-top:14px; }
+        .vh-btn { display:inline-flex; align-items:center; justify-content:center; width:100%; min-height:48px; padding:13px 18px; margin-top:12px; border:0; border-radius:8px; background:var(--vh-blue); color:#fff; font:500 14px Roboto,Arial,sans-serif; text-decoration:none; cursor:pointer; }
+        .vh-btn.secondary { background:var(--vh-blue-soft); color:var(--vh-blue); }
+        .vh-link { display:block; margin-top:14px; color:var(--vh-blue); font-size:13px; text-align:center; text-decoration:none; }
+        .vh-root label { display:block; margin:14px 0 6px; font-size:13px; font-weight:500; }
+        .vh-root input,.vh-root textarea,.vh-root select { display:block; width:100%; padding:13px 14px; border:1px solid var(--vh-line); border-radius:8px; background:var(--vh-surf); color:var(--vh-ink); font:400 15px Roboto,Arial,sans-serif; }
+        .vh-root textarea { resize:vertical; }
+        .vh-list { padding:0; margin:0; list-style:none; }
+        .vh-list li { padding:13px 0; border-bottom:1px solid var(--vh-line); font-size:14px; }
+        .vh-list li:last-child { border-bottom:0; }
+        .vh-modal-backdrop { position:fixed; inset:0; z-index:20; display:flex; align-items:center; justify-content:center; padding:20px 14px calc(20px + env(safe-area-inset-bottom,0px)); background:rgba(32,33,36,.48); }
+        .vh-modal { position:relative; width:min(100%,440px); max-height:calc(100dvh - 40px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)); overflow:auto; border-radius:20px; background:var(--vh-surf); color:var(--vh-ink); box-shadow:0 12px 40px rgba(0,0,0,.28); padding:25px 24px 22px; animation:vh-pop .18s ease-out both; }
+        @keyframes vh-pop { from { opacity:0; transform:translateY(8px) scale(.985); } to { opacity:1; transform:none; } }
+        .vh-modal-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+        .vh-google { display:flex; align-items:center; gap:9px; font-size:17px; font-weight:500; letter-spacing:-.3px; }
+        .vh-google-g { font:700 27px Arial,sans-serif; background:conic-gradient(from -45deg,#4285f4 0 25%,#34a853 25% 48%,#fbbc05 48% 70%,#ea4335 70% 86%,#4285f4 86%); color:transparent; background-clip:text; -webkit-background-clip:text; }
+        .vh-close { width:36px; height:36px; border:0; border-radius:50%; background:transparent; color:var(--vh-mute); font-size:23px; cursor:pointer; }
+        .vh-google-sub { margin-top:2px; color:var(--vh-mute); font-size:12px; }
+        .vh-business { padding:16px 0 18px; border-top:1px solid var(--vh-line); border-bottom:1px solid var(--vh-line); }
+        .vh-business-name { font-size:18px; font-weight:600; }
+        .vh-business-loc { margin-top:3px; color:var(--vh-mute); font-size:13px; }
+        .vh-rate-label { margin:19px 0 10px; font-size:14px; font-weight:500; }
+        .vh-stars { display:flex; align-items:center; justify-content:space-between; gap:6px; max-width:330px; margin:0 auto 8px; }
+        .vh-star { display:flex; align-items:center; justify-content:center; width:54px; height:54px; border:0; border-radius:50%; background:transparent; color:#dadce0; font-size:35px; line-height:1; cursor:pointer; transition:background .15s,color .15s,transform .15s; }
+        .vh-star:hover,.vh-star:focus-visible { background:var(--vh-blue-soft); color:var(--vh-star); }
+        .vh-star.selected { color:var(--vh-star); }
+        .vh-star:active { transform:scale(.94); }
+        .vh-muted-note { color:var(--vh-mute); font-size:12px; text-align:center; margin:0; }
+        .vh-followup { margin-top:18px; padding-top:18px; border-top:1px solid var(--vh-line); }
+        .vh-nav { position:fixed; left:50%; bottom:calc(13px + env(safe-area-inset-bottom,0px)); z-index:8; display:flex; gap:2px; width:max-content; max-width:calc(100vw - 24px); padding:5px; transform:translateX(-50%); border:1px solid var(--vh-line); border-radius:999px; background:var(--vh-surf); box-shadow:0 3px 12px rgba(60,64,67,.16); }
+        .vh-nav button { padding:10px 16px; border:0; border-radius:999px; background:transparent; color:var(--vh-mute); font:500 13px Roboto,Arial,sans-serif; cursor:pointer; }
+        .vh-nav button.on { background:var(--vh-blue-soft); color:var(--vh-blue); }
+        .vh-root :focus-visible { outline:2px solid var(--vh-blue); outline-offset:2px; }
+        @media(max-width:360px) { .vh-modal { padding:22px 17px 18px; } .vh-star { width:47px; height:47px; font-size:31px; } .vh-nav button { padding:10px 13px; } }
+        @media(prefers-reduced-motion:reduce) { .vh-root *, .vh-root *::before, .vh-root *::after { animation:none!important; transition:none!important; } }
       `}</style>
 
-      <div className="review-shell">
-        <header className="review-top">
-          <div className="review-brand">
-            DAGAS SHOP
-            <small>Thanks for visiting our showroom</small>
+      <div className="vh-wrap">
+        <header className="vh-top">
+          <div>
+            <div className="vh-brand">{SHOP.name}</div>
+            <div className="vh-tag">{SHOP.location} · Thanks for visiting</div>
           </div>
-          <button
-            type="button"
-            className="theme-toggle"
-            onClick={toggleTheme}
-            aria-label="Switch colour theme"
-          >
-            {theme === "light" ? "Dark theme" : "Light theme"}
+          <button className="vh-theme" type="button" onClick={toggleTheme} aria-label="Switch theme" title="Switch theme">
+            {theme === "dark" ? "☀" : "☾"}
           </button>
         </header>
 
-        {!dialogOpen && (
-          <section className="closed-state">
-            <h1>Thanks for visiting DAGAS SHOP</h1>
-            <p>Your feedback helps other shoppers and helps us improve. Share an honest rating of your experience.</p>
-            <button type="button" className="reopen" onClick={() => setDialogOpen(true)}>
-              Write a Google review
-            </button>
-            <div className="small-links">
-              <a href={WHATSAPP_URL} target="_blank" rel="noopener noreferrer">WhatsApp</a>
-              <a href={MAPS_URL} target="_blank" rel="noopener noreferrer">Directions</a>
-              <a href={CATALOGUE_URL}>Catalogue</a>
-            </div>
-          </section>
-        )}
+        <main>
+          {activeTab === "rate" && (
+            <section className="vh-card">
+              <h1 className="vh-title">Thanks for visiting DAGAS SHOP</h1>
+              <p className="vh-copy">Your feedback helps other shoppers discover us.</p>
+              <button className="vh-btn" type="button" onClick={() => setReviewOpen(true)}>Rate your visit</button>
+            </section>
+          )}
+
+          {activeTab === "ask" && (
+            <section className="vh-card">
+              <h1 className="vh-title">Can’t find your size?</h1>
+              <p className="vh-copy">Ask us. We’ll reply on WhatsApp.</p>
+              <label htmlFor="vh-need">What do you need?</label>
+              <select id="vh-need" value={need} onChange={(e) => setNeed(e.target.value)}>
+                <option>Product availability</option><option>Size or alteration</option><option>Bulk or wedding order</option><option>Something else</option>
+              </select>
+              <label htmlFor="vh-details">Details</label>
+              <input id="vh-details" placeholder="Product name, colour or size" value={details} onChange={(e) => setDetails(e.target.value)} />
+              <label htmlFor="vh-name">Your name (optional)</label>
+              <input id="vh-name" autoComplete="name" value={visitorName} onChange={(e) => setVisitorName(e.target.value)} />
+              <button className="vh-btn" type="button" onClick={sendQuestion}>Message the store</button>
+            </section>
+          )}
+
+          {activeTab === "off" && (
+            <section className="vh-card">
+              <h1 className="vh-title">Get offers first</h1>
+              <p className="vh-copy">Ask us on WhatsApp for new-arrival and offer updates. No spam.</p>
+              <ul className="vh-list">{SHOP.perks.map((perk) => <li key={perk}>{perk}</li>)}</ul>
+              <a className="vh-btn" href={whatsappLink(offersMessage)} target="_blank" rel="noopener noreferrer">Get offers on WhatsApp</a>
+              <a className="vh-btn secondary" href={SHOP.catalogueUrl}>Browse the catalogue</a>
+            </section>
+          )}
+
+          {activeTab === "vis" && (
+            <section className="vh-card">
+              <h1 className="vh-title">Visit the store</h1>
+              <p className="vh-copy">{SHOP.address}</p>
+              <p className="vh-copy">{SHOP.hours}</p>
+              <a className="vh-btn" href={SHOP.mapsUrl} target="_blank" rel="noopener noreferrer">Get directions</a>
+              <a className="vh-btn secondary" href={"tel:" + SHOP.phone}>Call us</a>
+            </section>
+          )}
+        </main>
       </div>
 
-      <dialog
-        ref={dialogRef}
-        className="review-dialog"
-        aria-labelledby="review-title"
-        aria-describedby="review-description"
-        onClose={() => setDialogOpen(false)}
-      >
-        <div className="dialog-inner">
-          <div className="dialog-head">
-            <div className="google-word" aria-label="Google">
-              <span className="g1">G</span><span className="g2">o</span><span className="g3">o</span><span className="g4">g</span><span className="g5">l</span><span className="g6">e</span>
+      {reviewOpen && activeTab === "rate" && (
+        <div className="vh-modal-backdrop" role="presentation" onMouseDown={(e) => { if (e.target === e.currentTarget) setReviewOpen(false); }}>
+          <section className="vh-modal" role="dialog" aria-modal="true" aria-labelledby="vh-dialog-title">
+            <div className="vh-modal-top">
+              <div>
+                <div className="vh-google"><span className="vh-google-g" aria-hidden="true">G</span><span id="vh-dialog-title">Google review</span></div>
+                <div className="vh-google-sub">Share your experience</div>
+              </div>
+              <button className="vh-close" type="button" onClick={() => setReviewOpen(false)} aria-label="Close review window">×</button>
             </div>
-            <div className="dialog-controls">
-              <button type="button" className="theme-toggle" onClick={toggleTheme} aria-label="Switch colour theme">
-                {theme === "light" ? "Dark theme" : "Light theme"}
-              </button>
-              <button type="button" className="close-dialog" onClick={() => setDialogOpen(false)} aria-label="Close review popup">×</button>
+
+            <div className="vh-business">
+              <div className="vh-business-name">{SHOP.name}</div>
+              <div className="vh-business-loc">{SHOP.location}</div>
             </div>
-          </div>
 
-          <h1 className="dialog-title" id="review-title">Review DAGAS SHOP</h1>
-          <p className="dialog-copy" id="review-description">How was your experience with this business?</p>
+            <div className="vh-rate-label">Rate your experience</div>
+            <div className="vh-stars" aria-label="Rate your experience from one to five stars">
+              {[1, 2, 3, 4, 5].map((value) => (
+                <button key={value} type="button" className={"vh-star" + (rating >= value ? " selected" : "")} aria-label={value + " star" + (value > 1 ? "s" : "")} aria-pressed={rating === value} onClick={() => chooseRating(value)}>★</button>
+              ))}
+            </div>
+            <p className="vh-muted-note">Tap a star to continue to Google reviews.</p>
 
-          <div className="business-row">
-            <div className="business-name">DAGAS SHOP</div>
-            <div className="business-location">Sultanpete, Bengaluru</div>
-          </div>
+            {rating > 0 && rating < 4 && (
+              <div className="vh-followup" aria-live="polite">
+                <strong>Sorry we fell short. What went wrong?</strong>
+                <label htmlFor="vh-feedback">Your feedback</label>
+                <textarea id="vh-feedback" rows={3} value={feedback} onChange={(e) => setFeedback(e.target.value)} />
+                <label htmlFor="vh-feedback-name">Name and phone (optional)</label>
+                <input id="vh-feedback-name" autoComplete="name" value={feedbackName} onChange={(e) => setFeedbackName(e.target.value)} />
+                <button className="vh-btn" type="button" onClick={sendFeedback}>Send feedback privately</button>
+              </div>
+            )}
 
-          <p className="rate-label">Rate your experience</p>
-          <div className="rating-stars" role="group" aria-label="Choose a star rating">
-            {[1, 2, 3, 4, 5].map((value) => (
-              <button
-                key={value}
-                type="button"
-                className={rating >= value ? "selected" : ""}
-                aria-label={value + " out of 5 stars"}
-                aria-pressed={rating === value}
-                onClick={() => setRating(value)}
-              >
-                ★
-              </button>
-            ))}
-          </div>
-          <p className="rating-feedback" aria-live="polite">
-            {rating === 0 ? "Select a star to continue" : ratingLabels[rating]}
-          </p>
-
-          <p className="dialog-note">
-            You’ll finish sharing your rating on Google. Please leave an honest review based on your own experience.
-          </p>
-
-          <div className="dialog-actions">
-            <button type="button" className="btn-text" onClick={() => setDialogOpen(false)}>Not now</button>
-            <button type="button" className="btn-primary" disabled={rating === 0} onClick={continueToGoogle}>Continue to Google</button>
-          </div>
+            {rating >= 4 && (
+              <div className="vh-followup" aria-live="polite">
+                <strong>Thank you for your rating.</strong>
+                <p className="vh-copy">Google reviews should now be open in a new tab. You can finish sharing your experience there.</p>
+                <a className="vh-btn" href={SHOP.reviewUrl} target="_blank" rel="noopener noreferrer">Continue to Google review</a>
+              </div>
+            )}
+          </section>
         </div>
-      </dialog>
+      )}
+
+      <nav className="vh-nav" aria-label="Sections">
+        {tabs.map((tab) => (
+          <button key={tab.id} type="button" className={activeTab === tab.id ? "on" : ""} aria-current={activeTab === tab.id ? "page" : undefined} onClick={() => { setActiveTab(tab.id); if (tab.id === "rate") setReviewOpen(true); else setReviewOpen(false); }}>{tab.label}</button>
+        ))}
+      </nav>
     </div>
   );
 }
